@@ -32,6 +32,27 @@ function CandidateCard({ candidate, onReevaluate, isReevaluating, isRecentlyEval
   const hasSubgiant = flags.includes('SUBGIANT');
   const hasKnownPlanets = flags.includes('KNOWN_PLANETS_IN_FIELD');
 
+  // Tier Classification
+  let tier = 'UNCLASSIFIED';
+  if (simbad?.primary_id) {
+    const simbadType = (simbad.object_type || '').toLowerCase();
+    const spectralType = simbad.spectral_type || '';
+    
+    // Confound signatures — use string.includes() because SIMBAD types are composite
+    // e.g. 'RotV*WUMa', 'EB*WUMa', 'sg*', 'LP*', 'Mi*'
+    const confoundPatterns = ['ro*', 'v*', 'rg*', 'sb*', 'eb*', 'sg*', 'lp*', 'mi*'];
+    const isConfounded = confoundPatterns.some(p => simbadType.includes(p)) ||
+                         spectralType.includes('IV') ||
+                         spectralType.includes('III') ||
+                         flags.length > 0;
+    
+    if (isConfounded) {
+      tier = 'TIER_B';
+    } else if ((simbadType === '*' || simbadType === 'star') && flags.length === 0) {
+      tier = 'TIER_A';
+    }
+  }
+
   return (
     <div className="candidate-row glass-panel">
       {/* === TOP BAR: Target ID + Verdict + Quick Stats === */}
@@ -42,6 +63,9 @@ function CandidateCard({ candidate, onReevaluate, isReevaluating, isRecentlyEval
             {ai_verdict === 'MODEL_BOUND' && <span className="verdict-icon">⚠</span>}
             {ai_verdict === 'INCONCLUSIVE' && <span className="verdict-icon">◌</span>}
             {ai_verdict}
+          </span>
+          <span className={`verdict-badge ${tier.toLowerCase()}`}>
+            {tier.replace('_', ' ')}
           </span>
           {/* Verdict reason — heavier visual weight for non-PASS */}
           {ai_verdict === 'MODEL_BOUND' && (

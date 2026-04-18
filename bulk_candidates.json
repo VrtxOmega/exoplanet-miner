@@ -60,28 +60,6 @@
                         "acquisition": "Lightkurve_API",
                         "tier": "A"
                     }
-                },
-                {
-                    "id": "aa607c5b853f45c183069375c1a7f4b6",
-                    "variable": "TRANSIT_SNR",
-                    "value": {
-                        "x": 31.241447453821618,
-                        "units": "ratio",
-                        "kind": "point"
-                    },
-                    "timestamp": "2026-04-17T08:47:14.161289Z",
-                    "method": {
-                        "protocol": "Radial Velocity Exoplanet Confirmation",
-                        "parameters": {
-                            "spectrograph": "HARPS-N"
-                        },
-                        "repeatable": true
-                    },
-                    "provenance": {
-                        "source_id": "GROUND_HARPS",
-                        "acquisition": "Archive_Query",
-                        "tier": "A"
-                    }
                 }
             ]
         },
@@ -147,28 +125,6 @@
                     "provenance": {
                         "source_id": "NASA_MAST_KEPLER",
                         "acquisition": "Lightkurve_API",
-                        "tier": "A"
-                    }
-                },
-                {
-                    "id": "6062e81e549c42c2ab1fa56d0b9d5a23",
-                    "variable": "TRANSIT_SNR",
-                    "value": {
-                        "x": 9.380214071867547,
-                        "units": "ratio",
-                        "kind": "point"
-                    },
-                    "timestamp": "2026-04-17T08:47:32.068600Z",
-                    "method": {
-                        "protocol": "Radial Velocity Exoplanet Confirmation",
-                        "parameters": {
-                            "spectrograph": "HARPS-N"
-                        },
-                        "repeatable": true
-                    },
-                    "provenance": {
-                        "source_id": "GROUND_HARPS",
-                        "acquisition": "Archive_Query",
                         "tier": "A"
                     }
                 }

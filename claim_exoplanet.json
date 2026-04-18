@@ -48,28 +48,6 @@
                 "acquisition": "Lightkurve_API",
                 "tier": "A"
             }
-        },
-        {
-            "id": "80fe178698b14b4d956a0edc886c89f9",
-            "variable": "TRANSIT_SNR",
-            "value": {
-                "x": 31.241447453821618,
-                "units": "ratio",
-                "kind": "point"
-            },
-            "timestamp": "2026-04-17T09:07:53.461318Z",
-            "method": {
-                "protocol": "Radial Velocity Exoplanet Confirmation",
-                "parameters": {
-                    "spectrograph": "HARPS-N"
-                },
-                "repeatable": true
-            },
-            "provenance": {
-                "source_id": "GROUND_HARPS",
-                "acquisition": "Archive_Query",
-                "tier": "A"
-            }
         }
     ]
 }

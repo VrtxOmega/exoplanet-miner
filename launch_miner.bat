@@ -1,7 +1,8 @@
 @echo off
+cd /d "%~dp0"
 echo Starting Sovereign Miner Telemetry Backend...
-start "Sovereign Telemetry Backend" cmd /c "cd /d c:\Veritas_Lab\exoplanet_miner && python server.py"
+start "Sovereign Telemetry Backend" cmd /c "python server.py"
 
 echo Starting Sovereign Miner Telemetry Dashboard...
-cd /d "c:\Veritas_Lab\exoplanet_miner\dashboard"
+cd dashboard
 npm run dev -- --open

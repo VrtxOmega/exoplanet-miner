@@ -7,6 +7,7 @@ import os
 import json
 import time
 import requests
+import re
 
 CACHE_FILE = os.path.join(os.path.dirname(__file__), "known_hosts_cache.json")
 CACHE_MAX_AGE_S = 86400  # Re-download once per day
@@ -71,9 +72,14 @@ def is_known_host(target_name, known_hosts=None):
     if name_lower in known_hosts:
         return True
     
-    # Check if any known host is a substring (e.g. "kepler-10" in "Kepler-10 b")
+    # Check if any known host is a substring using word boundaries
+    # to prevent "kepler-10" from erroneously flagging "kepler-100"
     for host in known_hosts:
-        if host in name_lower or name_lower in host:
+        pattern = r"\b" + re.escape(host) + r"\b"
+        if re.search(pattern, name_lower):
+            return True
+        pattern_rev = r"\b" + re.escape(name_lower) + r"\b"
+        if re.search(pattern_rev, host):
             return True
     
     return False

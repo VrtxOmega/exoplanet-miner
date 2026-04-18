@@ -31,6 +31,7 @@ def init_db():
             duration_days REAL,
             depth REAL,
             rp_rs_ratio REAL,
+            stellar_rotation_period_days REAL,
             claim_id TEXT,
             payload_hash TEXT UNIQUE,
             is_novel INTEGER DEFAULT 0,
@@ -38,13 +39,14 @@ def init_db():
             ra REAL,
             dec_coord REAL,
             plot_url TEXT,
+            flux_std REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
     
-    # Add SIMBAD columns if they don't exist
-    simbad_columns = [
+    # Add new columns if they don't exist (for existing databases)
+    migration_columns = [
         ("simbad_id", "TEXT"),
         ("spectral_type", "TEXT"),
         ("object_type", "TEXT"),
@@ -53,9 +55,11 @@ def init_db():
         ("simbad_flags", "TEXT"),
         ("simbad_neighbors", "INTEGER DEFAULT 0"),
         ("stellar_radius_est", "TEXT"),
+        ("flux_std", "REAL"),
+        # NOTE: stellar_rotation_period_days already defined in CREATE TABLE
     ]
     
-    for col_name, col_type in simbad_columns:
+    for col_name, col_type in migration_columns:
         try:
             c.execute(f"ALTER TABLE candidates ADD COLUMN {col_name} {col_type}")
         except sqlite3.OperationalError:
@@ -67,7 +71,7 @@ def init_db():
 init_db()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}})
 
 @app.route('/api/health')
 def health():
@@ -121,9 +125,10 @@ def persist_candidate(candidate_data):
         c.execute('''
             INSERT OR IGNORE INTO candidates
             (target, target_id, verdict, ai_reasoning, snr, period_days, duration_days,
-             depth, rp_rs_ratio, claim_id, payload_hash, is_novel, data_source, ra, dec_coord, plot_url,
+             depth, rp_rs_ratio, stellar_rotation_period_days, claim_id, payload_hash, is_novel, data_source, ra, dec_coord, plot_url,
+             flux_std,
              simbad_id, spectral_type, object_type, distance_pc, parallax_mas, simbad_flags, simbad_neighbors, stellar_radius_est)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             candidate_data.get('target', ''),
             str(data.get('target_id', '')),
@@ -134,6 +139,7 @@ def persist_candidate(candidate_data):
             data.get('duration_days', 0),
             data.get('depth', 0),
             data.get('rp_rs_ratio', 0),
+            data.get('stellar_rotation_period_days'),
             candidate_data.get('claim', {}).get('id', '') if candidate_data.get('claim') else '',
             candidate_data.get('payload_hash', ''),
             1 if candidate_data.get('is_novel', False) else 0,
@@ -141,6 +147,7 @@ def persist_candidate(candidate_data):
             data.get('ra', 0),
             data.get('dec', 0),
             data.get('plot_url', ''),
+            data.get('flux_std'),
             simbad.get('primary_id', ''),
             simbad.get('spectral_type', ''),
             simbad.get('object_type', ''),
@@ -177,7 +184,7 @@ def re_evaluate(target_id):
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute('SELECT id, target, snr, depth, period_days, duration_days, ra, dec_coord, target_id FROM candidates WHERE target_id = ? ORDER BY id', (target_id,))
+        c.execute('SELECT id, target, snr, depth, period_days, duration_days, ra, dec_coord, target_id, stellar_rotation_period_days, flux_std FROM candidates WHERE target_id = ? ORDER BY id', (target_id,))
         rows = c.fetchall()
         total = len(rows)
         
@@ -196,7 +203,7 @@ def re_evaluate(target_id):
             simbad_data = {}
             stellar_context_text = None
             
-            if ra and dec and ra != 0 and dec != 0:
+            if ra is not None and dec is not None:
                 try:
                     simbad_data = enrich_candidate(ra, dec)
                     stellar_context_text = format_for_oracle(simbad_data)
@@ -210,14 +217,22 @@ def re_evaluate(target_id):
                     yield f"data: {json.dumps({'type': 'info', 'message': emsg})}\n\n"
             
             # Step 2: Re-run oracle with stellar context
+            stored_depth = row.get('depth', 0)
+            stored_rotation = row.get('stellar_rotation_period_days', None)
+            stored_flux_std = row.get('flux_std', None)
+            # Use actual flux_std if available, fall back to conservative estimate
+            effective_flux_std = stored_flux_std if stored_flux_std is not None else (stored_depth * 0.3)
+            
             data_for_oracle = {
                 'target_id': row.get('target_id', target),
                 'coordinate': f"{ra}, {dec}",
                 'period_days': row.get('period_days', 0),
                 'duration_days': row.get('duration_days', 0),
-                'depth': row.get('depth', 0),
+                'depth': stored_depth,
                 'max_power': 0,
-                'snr': row.get('snr', 0)
+                'snr': row.get('snr', 0),
+                'flux_std': effective_flux_std,
+                'stellar_rotation_period_days': stored_rotation,
             }
             
             try:
@@ -291,7 +306,7 @@ if __name__ == "__main__":
     c.execute('SELECT COUNT(*) FROM candidates')
     print(f" Existing candidates: {c.fetchone()[0]}")
     conn.close()
-    print(f" API: http://0.0.0.0:5050")
+    print(f" API: http://127.0.0.1:5050")
     print(f" Endpoints: /api/health, /api/scan, /api/candidates, /api/stats, /api/re-evaluate")
     # threaded=True is critical for SSE + concurrent API access
-    app.run(host='0.0.0.0', port=5050, threaded=True)
+    app.run(host='127.0.0.1', port=5050, threaded=True)

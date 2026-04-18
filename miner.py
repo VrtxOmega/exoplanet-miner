@@ -3,6 +3,9 @@ import numpy as np
 import random
 import json
 import os
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 def mine_target(target_name="Kepler-10", save_single=True):
     """Searches a specific target, downloads lightcurve data, and runs BLS transit search."""
@@ -38,6 +41,15 @@ def mine_target(target_name="Kepler-10", save_single=True):
     lc_clean = lc.remove_nans().remove_outliers(sigma=4)
     lc_flat = lc_clean.flatten(window_length=401)
     
+    print("  -> Running Lomb-Scargle to extract stellar rotation...", flush=True)
+    try:
+        ls = lc_clean.to_periodogram(method='lombscargle', minimum_period=0.5, maximum_period=50.0)
+        stellar_rotation_period_days = float(ls.period_at_max_power.value)
+        print(f"     Stellar Rotation Period: {stellar_rotation_period_days:.4f} days", flush=True)
+    except Exception as e:
+        print(f"  -> Lomb-Scargle failed: {e}", flush=True)
+        stellar_rotation_period_days = None
+
     print(f"  -> Star ID: {lc.meta.get('TARGETID', 'Unknown')}", flush=True)
     print(f"  -> Data points: {len(lc_flat.flux)}", flush=True)
     
@@ -110,9 +122,6 @@ def mine_target(target_name="Kepler-10", save_single=True):
 
     # Generate Transit Plot
     print("  -> Generating Transit Plot...", flush=True)
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
     
     os.makedirs("plots", exist_ok=True)
     filename_safe = str(target_name).replace(" ", "_").replace(".", "_")
@@ -171,6 +180,7 @@ def mine_target(target_name="Kepler-10", save_single=True):
         "max_power": float(max_power),
         "n_datapoints": len(lc_flat.flux),
         "flux_std": std_dev,
+        "stellar_rotation_period_days": stellar_rotation_period_days,
     }
     
     if save_single:

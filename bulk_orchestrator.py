@@ -112,7 +112,7 @@ def run_bulk_scan():
             if len(sr) > 0:
                 for r in sr:
                     fallback_targets.append({"name": str(r.target_name), "source": "Kepler", "ra": 0, "dec": 0})
-        except:
+        except Exception:
             pass
         pool = fallback_targets
     

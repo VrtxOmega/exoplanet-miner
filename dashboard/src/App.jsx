@@ -4,6 +4,7 @@ import { VeritasKineticOrbital } from './VeritasKineticOrbital';
 function CandidateCard({ candidate, onReevaluate, isReevaluating, isRecentlyEvaluated, reEvalProgress, lastLog }) {
   const { target, target_id, data, claim, ai_verdict, payload_hash, simbad } = candidate;
   const [oracleExpanded, setOracleExpanded] = useState(true);
+  const [claimExpanded, setClaimExpanded] = useState(false);
 
   if (ai_verdict === "TERMINAL_SHUTDOWN" || ai_verdict === "AUTHORITY_DRIFT") {
     return (
@@ -37,7 +38,18 @@ function CandidateCard({ candidate, onReevaluate, isReevaluating, isRecentlyEval
       <div className="row-header">
         <div className="row-header-left">
           <h2>{target}</h2>
-          <span className={`verdict-badge ${ai_verdict.toLowerCase()}`}>{ai_verdict}</span>
+          <span className={`verdict-badge ${ai_verdict.toLowerCase()} ${ai_verdict !== 'PASS' ? 'heavy' : ''}`}>
+            {ai_verdict === 'MODEL_BOUND' && <span className="verdict-icon">⚠</span>}
+            {ai_verdict === 'INCONCLUSIVE' && <span className="verdict-icon">◌</span>}
+            {ai_verdict}
+          </span>
+          {/* Verdict reason — heavier visual weight for non-PASS */}
+          {ai_verdict === 'MODEL_BOUND' && (
+            <span className="verdict-reason bound-reason">certainty bounded — external constraint</span>
+          )}
+          {ai_verdict === 'INCONCLUSIVE' && (
+            <span className="verdict-reason inconc-reason">insufficient evidence to conclude</span>
+          )}
           {/* SIMBAD flags as inline badges */}
           {hasRotating && <span className="flag-badge rotating">ROT★</span>}
           {hasEB && <span className="flag-badge eb">EB</span>}
@@ -132,6 +144,7 @@ function CandidateCard({ candidate, onReevaluate, isReevaluating, isRecentlyEval
         <div className="zone-intel">
           <div className="claim-block">
             <div className="claim-title">VERITAS 1.3.1 CLAIM Ω</div>
+            <div className="claim-bridge">We verify detection claims, not just generate them.</div>
             <div className="claim-id-row">
               <span className="claim-label">ID:</span>
               <span className="claim-hash">{claim ? claim.id : 'N/A'}</span>
@@ -145,6 +158,34 @@ function CandidateCard({ candidate, onReevaluate, isReevaluating, isRecentlyEval
             <div className="claim-anchor">
               <span>ANCHOR:</span> {payload_hash}
             </div>
+
+            {/* Collapsible Claim Structure */}
+            <div className="claim-structure-toggle" onClick={() => setClaimExpanded(!claimExpanded)}>
+              {claimExpanded ? '▾' : '▸'} CLAIM STRUCTURE
+            </div>
+            {claimExpanded && (
+              <div className="claim-structure">
+                <div className="struct-section">
+                  <div className="struct-label">PRIMITIVES</div>
+                  <div className="struct-row"><span>SNR</span><span>∈ [{data.snr?.toFixed(2)}] ± σ</span></div>
+                  <div className="struct-row"><span>DEPTH</span><span>∈ [{data.depth?.toExponential(2)}]</span></div>
+                  <div className="struct-row"><span>PERIOD</span><span>∈ [{data.period_days?.toFixed(3)}d]</span></div>
+                  <div className="struct-row"><span>DURATION</span><span>∈ [{data.duration_days?.toFixed(3)}d]</span></div>
+                </div>
+                <div className="struct-section">
+                  <div className="struct-label">BOUNDARIES</div>
+                  <div className="struct-row"><span>SNR_THRESHOLD</span><span>SNR {'>'} 10.0</span></div>
+                  <div className="struct-row"><span>DEPTH_LIMIT</span><span>DEPTH {'<'} 0.05</span></div>
+                </div>
+                <div className="struct-section">
+                  <div className="struct-label">EVIDENCE</div>
+                  <div className="struct-row"><span>SOURCE</span><span>Kepler Q1–Q17 MAST</span></div>
+                  <div className="struct-row"><span>METHOD</span><span>BLS transit search</span></div>
+                  <div className="struct-row"><span>TIER</span><span>B (reliable)</span></div>
+                  {simbad?.primary_id && <div className="struct-row"><span>SIMBAD</span><span>{simbad.primary_id}</span></div>}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="simbad-row">

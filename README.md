@@ -104,6 +104,42 @@ Exoplanet Miner runs as a Flask backend (port 5050) with a React/Vite frontend (
 
 ---
 
+## First Light — KIC 9141881
+
+On its first bulk scan of 66 Kepler targets, Exoplanet Miner flagged **KIC 9141881** as a VERITAS **PASS** candidate — the highest confidence verdict the pipeline can assign. The BLS algorithm detected a periodic flux dip with an SNR of **1,876** at a period of **4.058 days** and a fractional depth of **0.53%**, consistent with a hot Jupiter transiting a G1.5IV-V subgiant at **1,293 parsecs**. SIMBAD cross-reference returned 9 literature references, confirmed the host as a rotating variable (`Ro*`), and flagged **known planets in the field**. The Rp/Rs ratio of 0.073 suggests a companion radius roughly 7.3% of the host star — placing it squarely in the gas giant regime if the signal is planetary in origin.
+
+The open question is whether the 4.06-day periodicity is a genuine planetary transit or starspot modulation from the host's rotational variability. The transit depth is shallow enough to be mimicked by a large, cool starspot rotating in and out of view. A secondary eclipse search at phase 0.5 would resolve this: a detectable occultation would confirm a self-luminous companion (hot Jupiter or low-mass eclipsing binary), while a null detection would favor the starspot hypothesis. This candidate has not been submitted to any exoplanet catalog. It is presented here as raw pipeline output — exactly as the instrument produced it.
+
+<div align="center">
+  <img src="assets/KIC_9141881_phase.png" alt="KIC 9141881 Phase-Folded Lightcurve" width="700" />
+  <br/>
+  <sup><em>Phase-folded Kepler lightcurve for KIC 9141881 — BLS-detected transit at P = 4.058 d, depth = 0.53%, SNR = 1,876</em></sup>
+</div>
+
+<br/>
+
+| Parameter | Value | Source |
+|---|---|---|
+| **KIC ID** | 9141881 | Kepler Input Catalog |
+| **SIMBAD ID** | 2MASS J19022863+4534075 | CDS SIMBAD |
+| **Spectral Type** | G1.5IV-V (subgiant) | SIMBAD |
+| **Object Type** | Rotating Variable (`Ro*`) | SIMBAD |
+| **Distance** | 1,293 pc | Gaia DR3 (π = 0.774 mas) |
+| **RA / Dec** | 285.619° / +45.569° | Kepler |
+| **Period** | 4.058 days | BLS detection |
+| **Depth** | 0.53% (5,280 ppm) | BLS detection |
+| **SNR** | 1,876 | BLS detection |
+| **Duration** | 0.33 days (7.9 hr) | BLS detection |
+| **Rp/Rs** | 0.073 | Transit model fit |
+| **Literature Refs** | 9 | SIMBAD neighbors |
+| **Flags** | `ROTATING_VARIABLE`, `SUBGIANT`, `KNOWN_PLANETS_IN_FIELD` | SIMBAD |
+| **VERITAS Verdict** | **PASS** | Ω-1.3.1 sealed claim |
+| **Novel** | Yes — not in confirmed exoplanet catalog | Known planet cross-check |
+
+> **Status**: Secondary eclipse check pending. If you have access to TESS Sector 14/40/41 data covering this field, a phase-0.5 depth measurement would resolve the transit vs. starspot ambiguity. Open an issue or PR if you run the test.
+
+---
+
 ## Quickstart
 
 ### Prerequisites
